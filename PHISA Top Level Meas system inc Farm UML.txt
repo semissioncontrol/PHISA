@@ -1,0 +1,129 @@
+@startuml
+title Example of Mars PHISA inc. farm electronics architecture
+
+node "Lettuce bed 1 controller" as FB1 {
+	[Farm Controller] as F1Controller #lightblue
+	[Bed driver board] as F1A1Driver #lightblue
+	[Water reservour\ndriver board] as F1A2Driver #lightblue
+	interface "Water fill pump" as F1P1Water #lightblue
+	interface "pH sensor" as F1S1Water #lightblue
+	interface "Water level sensor" as F1S2Water #lightblue
+	interface "Soil moisture 1 sensor" as F1S1Bed #lightblue
+	interface "Soil moisture 2 sensor " as F1S2Bed #lightblue
+}
+
+F1Controller -down- F1A1Driver
+F1Controller -up- F1A2Driver
+
+F1A1Driver -down- F1S1Bed
+F1A1Driver -down- F1S2Bed
+
+F1A2Driver -up- F1P1Water 
+F1A2Driver -up- F1S1Water
+F1A2Driver -up- F1S2Water
+
+note right of F1Controller
+	The controller is wired to driver boards (not Wifi).
+	Driver boards are dumb. They take instructions from the controller.
+	Each farm can have many driver boards,
+	each with a different sensor or motorsuite attached, 
+	e.g. grow bed, sump, water reservoir, air quality, etc.
+end note
+
+
+node "Measurements gathering and serving\nserver" as MGS1{
+	[Measurement Manager] 					as MeasMgr1 #lightgreen
+	[Data Viewer System] 					as DV1System #lightgreen
+	interface "Tablet PC Web Client"		as DV1TabPC #lightgreen
+	interface "Mob phone Web Client"		as DV1MobPhone #lightgreen
+	interface "Desktop PC Web Client" 		as DV1DeskPC #lightgreen
+	interface "RPI & LCD Panel" 			as DV1RPiLCD #lightgreen
+	interface "RPI & Custom status LEDs"	as DV1RPICustomLEDs #lightgreen
+}
+
+MeasMgr1 -up- DV1System
+
+DV1System -down- DV1TabPC 
+DV1System -up- DV1MobPhone
+DV1System -up- DV1DeskPC
+DV1System -right- DV1RPiLCD
+DV1System -left- DV1RPICustomLEDs
+
+node "Habitat 1 black box" as HAB1{
+	[Measurement Connection\nmanagement] as MeasConMgr1 #lightgreen
+	interface "radiation"						as MCM1Radiation #lightgreen
+	interface "pressure"						as MCM1Pressure #lightgreen
+	interface "temperature"						as MCM1Temp #lightgreen
+	interface "humidity"						as MCM1Humid #lightgreen
+	interface "life support\n& harmful gases"	as MCM1GasCrom #lightgreen
+	interface "Location"						as MCM1Location #lightgreen
+	interface "power supply sensors"			as MCM1Power #lightgreen
+}
+
+MeasConMgr1 <-down-> MeasMgr1
+
+MeasConMgr1 -up- MCM1Radiation
+MeasConMgr1 -up- MCM1Pressure 
+MeasConMgr1 -up- MCM1Temp 
+MeasConMgr1 -left- MCM1Humid 
+MeasConMgr1 -right- MCM1GasCrom 
+MeasConMgr1 -down- MCM1Location 
+MeasConMgr1 -down- MCM1Power 
+
+node "Habitat 2 black box" as HAB2{
+	[Measurement Connection management\n*Radiation\n*Pressure\n*Temperature\n*Humidity\n*Life support & harmful gases\n*Location\n*power supply sensors] as MeasConMgr2 #lightgreen
+}
+
+MeasConMgr2 <-right-> MeasMgr1
+
+' Layout only, force connection but make it white 
+HAB2 -down- EXT1 #white
+
+node "Outside / External 1\nblack box" as EXT1{
+	[Measurement Connection management\n*Radiation\n*Pressure\n*Temperature\n*Humidity\n*Location\n*Wind\n*Atmospheric conditions] as MeasConMgr4 #lightgreen
+}
+
+MeasConMgr4 <-right-> MeasMgr1
+
+node "Lettuce bed 2 controller" as FB2{
+	[Farm Controller] as F2Controller #lightgreen
+	[Bed driver board\n*Soil moisture sensor 1\n*Soil moisture sensor 2] as F2A1Driver #lightgreen
+	[Water reservour driver board\n*Water fill pump\n*pH sensor\n*Water level sensor] as F2A2Driver #lightgreen
+}
+
+F2Controller -down- F2A1Driver
+F2Controller -down- F2A2Driver
+
+node "Tomato bed 1 controller" as FB3 {
+	[Farm Controller] as F3Controller #lightpink
+	[Bed driver board\n*Soil moisture sensor 1\n*Soil moisture sensor 2] as F3A1Driver  #lightpink
+	[Water reservour driver board\n*Water fill pump\n*pH sensor\n*Water level sensor] as F3A2Driver  #lightpink
+}
+F3Controller -down- F3A1Driver
+F3Controller -down- F3A2Driver
+
+node "Central Farm Server" as CFC1 {
+	[Measurement Connection management] as MeasConMgr3 #lightgreen
+	[Farm Bed Controller] as FB1Controller #lightpink
+}
+
+MeasConMgr3 <-up-> MeasMgr1
+
+FB1Controller <-up-> MeasConMgr3
+
+FB1Controller <-left-> F1Controller 
+FB1Controller <-down-> F2Controller
+FB1Controller <-down-> F3Controller
+
+note left of FB1Controller
+	Central computer talks to a 
+	farm controller board on each farm via Wifi. 
+	Each controller directs sensors and motors linked 
+	to driver boards in different parts of the farms. 
+end note
+
+[Central Mars Server] as Home
+Home -up- MeasMgr1
+Home -down- FB1Controller
+
+@enduml
